@@ -21,6 +21,10 @@ final class AppState: ObservableObject {
         didSet { UserDefaults.standard.set(isMockMode, forKey: "isMockMode") }
     }
 
+    @Published var pokeNotificationsEnabled: Bool = false {
+        didSet { UserDefaults.standard.set(pokeNotificationsEnabled, forKey: "pokeNotificationsEnabled") }
+    }
+
     @Published var selectedNerveStatus: NerveStatus = .yellow
     @Published var todaySnapshot: TodaySnapshot = .mock
     @Published var financeSummary: FinanceSummary = .mock
@@ -33,6 +37,7 @@ final class AppState: ObservableObject {
         self.telegramId = UserDefaults.standard.string(forKey: "telegramId") ?? ""
         self.apiToken = UserDefaults.standard.string(forKey: "apiToken") ?? ""
         self.isMockMode = UserDefaults.standard.object(forKey: "isMockMode") as? Bool ?? true
+        self.pokeNotificationsEnabled = UserDefaults.standard.object(forKey: "pokeNotificationsEnabled") as? Bool ?? false
     }
 
     var apiClient: OporaApiClient {
@@ -46,6 +51,20 @@ final class AppState: ObservableObject {
     func refreshAll() async {
         await refreshToday()
         await refreshFinance()
+    }
+
+    func enablePokeNotifications() async {
+        await runApiAction {
+            try await NotificationService.shared.scheduleDefaultPokeNotifications()
+            pokeNotificationsEnabled = true
+            lastMessage = "Проверка палкой по крону включена."
+        }
+    }
+
+    func disablePokeNotifications() {
+        NotificationService.shared.cancelPokeNotifications()
+        pokeNotificationsEnabled = false
+        lastMessage = "Проверка палкой по крону выключена."
     }
 
     func createTelegramLinkCode() async {
