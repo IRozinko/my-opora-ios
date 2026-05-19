@@ -9,6 +9,9 @@ struct RootTabView: View {
             FinanceView()
                 .tabItem { Label("Финансы", systemImage: "creditcard.fill") }
 
+            OperationView()
+                .tabItem { Label("Операция", systemImage: "shield.lefthalf.filled") }
+
             HabitsView()
                 .tabItem { Label("Привычки", systemImage: "checkmark.circle.fill") }
 
