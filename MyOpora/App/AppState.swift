@@ -10,6 +10,13 @@ final class AppState: ObservableObject {
         didSet { UserDefaults.standard.set(telegramId, forKey: "telegramId") }
     }
 
+    @Published var apiToken: String = "" {
+        didSet { UserDefaults.standard.set(apiToken, forKey: "apiToken") }
+    }
+
+    @Published var currentLinkCode: String? = nil
+    @Published var currentLinkInstruction: String? = nil
+
     @Published var isMockMode: Bool = true {
         didSet { UserDefaults.standard.set(isMockMode, forKey: "isMockMode") }
     }
@@ -24,16 +31,53 @@ final class AppState: ObservableObject {
     init() {
         self.apiBaseURL = UserDefaults.standard.string(forKey: "apiBaseURL") ?? ""
         self.telegramId = UserDefaults.standard.string(forKey: "telegramId") ?? ""
+        self.apiToken = UserDefaults.standard.string(forKey: "apiToken") ?? ""
         self.isMockMode = UserDefaults.standard.object(forKey: "isMockMode") as? Bool ?? true
     }
 
     var apiClient: OporaApiClient {
-        OporaApiClient(baseURLString: apiBaseURL, telegramId: telegramId)
+        OporaApiClient(baseURLString: apiBaseURL, telegramId: telegramId, apiToken: apiToken)
+    }
+
+    var isLinkedWithTelegram: Bool {
+        !apiToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     func refreshAll() async {
         await refreshToday()
         await refreshFinance()
+    }
+
+    func createTelegramLinkCode() async {
+        await runApiAction {
+            let response = try await apiClient.createLinkCode(deviceId: deviceId())
+            currentLinkCode = response.code
+            currentLinkInstruction = response.message
+            lastMessage = response.message
+        }
+    }
+
+    func exchangeTelegramLinkCode() async {
+        guard let code = currentLinkCode else {
+            lastError = "Сначала сгенерируй link code."
+            return
+        }
+
+        await runApiAction {
+            let response = try await apiClient.exchangeLinkCode(code)
+            apiToken = response.token
+            telegramId = ""
+            isMockMode = false
+            lastMessage = response.message
+            await refreshAll()
+        }
+    }
+
+    func logout() {
+        apiToken = ""
+        currentLinkCode = nil
+        currentLinkInstruction = nil
+        lastMessage = "Привязка сброшена."
     }
 
     func refreshToday() async {
@@ -103,5 +147,15 @@ final class AppState: ObservableObject {
         } catch {
             lastError = error.localizedDescription
         }
+    }
+
+    private func deviceId() -> String {
+        if let existing = UserDefaults.standard.string(forKey: "deviceId") {
+            return existing
+        }
+
+        let newValue = UUID().uuidString
+        UserDefaults.standard.set(newValue, forKey: "deviceId")
+        return newValue
     }
 }
