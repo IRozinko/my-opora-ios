@@ -157,3 +157,14 @@ struct ApiMessageResponse: Codable {
     let ok: Bool
     let message: String
 }
+
+struct LinkCodeResponse: Codable {
+    let code: String
+    let expiresAt: String
+    let message: String
+}
+
+struct TokenResponse: Codable {
+    let token: String
+    let message: String
+}
