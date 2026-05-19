@@ -46,6 +46,23 @@ struct SettingsView: View {
                     }
                 }
 
+                Section("Проверка палкой по крону") {
+                    Toggle("Включить ежедневные тычки", isOn: Binding(
+                        get: { appState.pokeNotificationsEnabled },
+                        set: { newValue in
+                            if newValue {
+                                Task { await appState.enablePokeNotifications() }
+                            } else {
+                                appState.disablePokeNotifications()
+                            }
+                        }
+                    ))
+
+                    Text("Уведомления: 09:30, 13:30, 18:30, 22:00. Это не давление, а мягкий health-check: вода, пауза, семья, закрыть день.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("MVP fallback") {
                     TextField("Telegram ID вручную", text: $appState.telegramId)
                         .keyboardType(.numberPad)
@@ -70,7 +87,6 @@ struct SettingsView: View {
 
                 Section("Напоминания") {
                     Toggle("Утро", isOn: .constant(true))
-                    Toggle("Проверка палкой", isOn: .constant(true))
                     Toggle("Вечерний разбор", isOn: .constant(true))
                 }
             }
