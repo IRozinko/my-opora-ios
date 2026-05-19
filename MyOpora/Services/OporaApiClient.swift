@@ -3,7 +3,7 @@ import Foundation
 enum OporaApiError: LocalizedError {
     case missingBaseURL
     case invalidBaseURL
-    case missingTelegramId
+    case missingAuth
     case invalidResponse
     case httpStatus(Int, String)
 
@@ -13,8 +13,8 @@ enum OporaApiError: LocalizedError {
             return "API base URL is empty. Set it in Settings."
         case .invalidBaseURL:
             return "API base URL is invalid."
-        case .missingTelegramId:
-            return "Telegram ID is empty. Set it in Settings for MVP auth."
+        case .missingAuth:
+            return "Auth is missing. Link the app with Telegram or set Telegram ID for MVP mode."
         case .invalidResponse:
             return "Invalid API response."
         case .httpStatus(let code, let body):
@@ -26,6 +26,7 @@ enum OporaApiError: LocalizedError {
 struct OporaApiClient {
     var baseURLString: String
     var telegramId: String
+    var apiToken: String
 
     private var decoder: JSONDecoder {
         let decoder = JSONDecoder()
@@ -37,6 +38,14 @@ struct OporaApiClient {
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .useDefaultKeys
         return encoder
+    }
+
+    func createLinkCode(deviceId: String) async throws -> LinkCodeResponse {
+        try await request(path: "/api/auth/link-code", method: "POST", body: LinkCodeRequest(deviceId: deviceId), authRequired: false)
+    }
+
+    func exchangeLinkCode(_ code: String) async throws -> TokenResponse {
+        try await request(path: "/api/auth/exchange-link-code", method: "POST", body: ExchangeLinkCodeRequest(code: code), authRequired: false)
     }
 
     func fetchToday() async throws -> TodaySnapshot {
@@ -69,12 +78,14 @@ struct OporaApiClient {
         try await request(path: "/api/nerve-status", method: "POST", body: NerveStatusRequest(status: status.rawValue, note: nil))
     }
 
-    private func request<Response: Decodable, Body: Encodable>(path: String, method: String, body: Body?) async throws -> Response {
+    private func request<Response: Decodable, Body: Encodable>(
+        path: String,
+        method: String,
+        body: Body?,
+        authRequired: Bool = true
+    ) async throws -> Response {
         guard !baseURLString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw OporaApiError.missingBaseURL
-        }
-        guard !telegramId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw OporaApiError.missingTelegramId
         }
         guard let baseURL = URL(string: baseURLString.trimmingCharacters(in: .whitespacesAndNewlines)) else {
             throw OporaApiError.invalidBaseURL
@@ -84,7 +95,19 @@ struct OporaApiClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(telegramId, forHTTPHeaderField: "x-telegram-id")
+
+        if authRequired {
+            let cleanToken = apiToken.trimmingCharacters(in: .whitespacesAndNewlines)
+            let cleanTelegramId = telegramId.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            if !cleanToken.isEmpty {
+                request.setValue("Bearer \(cleanToken)", forHTTPHeaderField: "Authorization")
+            } else if !cleanTelegramId.isEmpty {
+                request.setValue(cleanTelegramId, forHTTPHeaderField: "x-telegram-id")
+            } else {
+                throw OporaApiError.missingAuth
+            }
+        }
 
         if let body {
             request.httpBody = try encoder.encode(body)
@@ -102,6 +125,14 @@ struct OporaApiClient {
 
         return try decoder.decode(Response.self, from: data)
     }
+}
+
+private struct LinkCodeRequest: Encodable {
+    let deviceId: String
+}
+
+private struct ExchangeLinkCodeRequest: Encodable {
+    let code: String
 }
 
 private struct ExpenseRequest: Encodable {
