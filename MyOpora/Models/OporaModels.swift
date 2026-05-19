@@ -1,6 +1,6 @@
 import Foundation
 
-enum NerveStatus: String, CaseIterable, Identifiable {
+enum NerveStatus: String, CaseIterable, Identifiable, Codable {
     case green
     case yellow
     case red
@@ -35,23 +35,73 @@ enum NerveStatus: String, CaseIterable, Identifiable {
     }
 }
 
-struct TodaySnapshot: Identifiable {
+struct TodaySnapshot: Identifiable, Codable {
     let id = UUID()
+    var date: String
     var focus: String
-    var spentToday: Decimal
-    var currency: String
     var morningDone: Bool
     var eveningDone: Bool
-    var activeGoal: String
+    var spentToday: Decimal
+    var monthExpenses: Decimal
+    var monthIncome: Decimal
+    var debts: [DebtItem]
+    var goals: [GoalItem]
+    var phrase: String
+
+    enum CodingKeys: String, CodingKey {
+        case date, focus, morningDone, eveningDone, spentToday, monthExpenses, monthIncome, debts, goals, phrase
+    }
+
+    var currency: String { "UAH" }
+    var activeGoal: String { goals.first?.title ?? "Операция: выход из режима выживания" }
 
     static let mock = TodaySnapshot(
+        date: "today",
         focus: "Доехать, зайти спокойно, собрать контакты",
-        spentToday: 0,
-        currency: "UAH",
         morningDone: false,
         eveningDone: false,
-        activeGoal: "Операция: выход из режима выживания"
+        spentToday: 0,
+        monthExpenses: 0,
+        monthIncome: 0,
+        debts: DebtItem.mock,
+        goals: GoalItem.mock,
+        phrase: "Я не выхожу из финансовой ямы ценой семьи."
     )
+}
+
+struct FinanceSummary: Codable {
+    var monthIncome: Decimal
+    var monthExpenses: Decimal
+    var budgets: [BudgetItem]
+    var debts: [DebtItem]
+    var goals: [GoalItem]
+
+    static let mock = FinanceSummary(
+        monthIncome: 0,
+        monthExpenses: 0,
+        budgets: [],
+        debts: DebtItem.mock,
+        goals: GoalItem.mock
+    )
+}
+
+struct BudgetItem: Identifiable, Codable {
+    let id: Int
+    let category: String
+    let monthlyLimit: Decimal
+    let currency: String
+}
+
+struct DebtItem: Identifiable, Codable {
+    let id: Int
+    let name: String
+    let remainingAmount: Decimal
+    let monthlyPayment: Decimal
+
+    static let mock: [DebtItem] = [
+        .init(id: 1, name: "Кредитка 1", remainingAmount: 70_000, monthlyPayment: 4_000),
+        .init(id: 2, name: "Кредитка 2", remainingAmount: 70_000, monthlyPayment: 4_000)
+    ]
 }
 
 struct QuickExpenseCategory: Identifiable {
@@ -71,22 +121,39 @@ struct QuickExpenseCategory: Identifiable {
     ]
 }
 
-struct GoalItem: Identifiable {
-    let id = UUID()
-    let title: String
-    let current: Decimal
-    let target: Decimal
-    let emoji: String
+struct GoalItem: Identifiable, Codable {
+    let id: Int
+    let name: String
+    let targetAmount: Decimal
+    let currentAmount: Decimal
+    let status: String?
+    let priority: Int?
+
+    var title: String { name }
+
+    var emoji: String {
+        let lower = name.lowercased()
+        if lower.contains("кредит") { return "💳" }
+        if lower.contains("резерв") { return "🛡" }
+        if lower.contains("авто") || lower.contains("машин") { return "🚙" }
+        if lower.contains("дом") { return "🏡" }
+        return "🎯"
+    }
 
     var progress: Double {
-        guard target > 0 else { return 0 }
-        return min(Double(truncating: current as NSNumber) / Double(truncating: target as NSNumber), 1)
+        guard targetAmount > 0 else { return 0 }
+        return min(Double(truncating: currentAmount as NSNumber) / Double(truncating: targetAmount as NSNumber), 1)
     }
 
     static let mock: [GoalItem] = [
-        .init(title: "Кредитки в ноль", current: 0, target: 140_000, emoji: "💳"),
-        .init(title: "Минимальный резерв", current: 0, target: 300_000, emoji: "🛡"),
-        .init(title: "Новая машина", current: 0, target: 2_500_000, emoji: "🚙"),
-        .init(title: "Дом", current: 0, target: 5_000_000, emoji: "🏡")
+        .init(id: 1, name: "Кредитки в ноль", targetAmount: 140_000, currentAmount: 0, status: "active", priority: 0),
+        .init(id: 2, name: "Минимальный резерв", targetAmount: 300_000, currentAmount: 0, status: "active", priority: 1),
+        .init(id: 3, name: "Новая машина", targetAmount: 2_500_000, currentAmount: 0, status: "paused", priority: 3),
+        .init(id: 4, name: "Дом", targetAmount: 5_000_000, currentAmount: 0, status: "paused", priority: 4)
     ]
+}
+
+struct ApiMessageResponse: Codable {
+    let ok: Bool
+    let message: String
 }
