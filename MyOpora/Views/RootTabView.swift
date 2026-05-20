@@ -12,6 +12,9 @@ struct RootTabView: View {
             CanBuyView()
                 .tabItem { Label("Can Buy?", systemImage: "cart.badge.questionmark") }
 
+            StyleView()
+                .tabItem { Label("Стиль", systemImage: "sparkles") }
+
             HomeTransitionView()
                 .tabItem { Label("Домой", systemImage: "house.fill") }
 
