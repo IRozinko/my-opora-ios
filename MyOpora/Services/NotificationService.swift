@@ -1,6 +1,11 @@
 import Foundation
 import UserNotifications
 
+enum PokeMode: String {
+    case humane
+    case ruthless
+}
+
 @MainActor
 final class NotificationService: ObservableObject {
     static let shared = NotificationService()
@@ -19,18 +24,11 @@ final class NotificationService: ObservableObject {
         await refreshAuthorizationStatus()
     }
 
-    func scheduleDefaultPokeNotifications() async throws {
+    func scheduleDefaultPokeNotifications(mode: PokeMode = .humane) async throws {
         try await requestAuthorization()
         cancelPokeNotifications()
 
-        let notifications = [
-            PokeNotification(id: "opora.poke.morning", hour: 9, minute: 30, title: "Опора", body: "*тык палкой* Живой? Вода, один фокус, без героизма."),
-            PokeNotification(id: "opora.poke.shoe", hour: 11, minute: 30, title: "Тык кроссовком", body: "Ты сегодня двигался или только думал о великих стратегиях? Короткий круг — уже зачёт."),
-            PokeNotification(id: "opora.poke.spoon", hour: 12, minute: 30, title: "Тык ложкой", body: "Ты ел нормальную еду или опять работаешь на кофе и злости? Сначала еда, потом стратегия."),
-            PokeNotification(id: "opora.poke.midday", hour: 13, minute: 30, title: "Проверка палкой", body: "Квадратная голова? Пауза, вода, механические задачи."),
-            PokeNotification(id: "opora.poke.evening", hour: 18, minute: 30, title: "Домой без исчезновения", body: "Назови состояние. Семья — не плата за успех."),
-            PokeNotification(id: "opora.poke.night", hour: 22, minute: 00, title: "Вечерняя Опора", body: "Не решаем всю жизнь. Закрываем день и не превращаемся в камень.")
-        ]
+        let notifications = mode == .ruthless ? ruthlessNotifications : humaneNotifications
 
         for notification in notifications {
             try schedule(notification)
@@ -46,6 +44,28 @@ final class NotificationService: ObservableObject {
             "opora.poke.evening",
             "opora.poke.night"
         ])
+    }
+
+    private var humaneNotifications: [PokeNotification] {
+        [
+            PokeNotification(id: "opora.poke.morning", hour: 9, minute: 30, title: "Опора", body: "*тык палкой* Живой? Вода, один фокус, без героизма."),
+            PokeNotification(id: "opora.poke.shoe", hour: 11, minute: 30, title: "Тык кроссовком", body: "Ты сегодня двигался или только думал о великих стратегиях? Короткий круг — уже зачёт."),
+            PokeNotification(id: "opora.poke.spoon", hour: 12, minute: 30, title: "Тык ложкой", body: "Ты ел нормальную еду или опять работаешь на кофе и злости? Сначала еда, потом стратегия."),
+            PokeNotification(id: "opora.poke.midday", hour: 13, minute: 30, title: "Проверка палкой", body: "Квадратная голова? Пауза, вода, механические задачи."),
+            PokeNotification(id: "opora.poke.evening", hour: 18, minute: 30, title: "Домой без исчезновения", body: "Назови состояние. Семья — не плата за успех."),
+            PokeNotification(id: "opora.poke.night", hour: 22, minute: 00, title: "Вечерняя Опора", body: "Не решаем всю жизнь. Закрываем день и не превращаемся в камень.")
+        ]
+    }
+
+    private var ruthlessNotifications: [PokeNotification] {
+        [
+            PokeNotification(id: "opora.poke.morning", hour: 9, minute: 30, title: "Палка без гуманности", body: "Объект, запуск. Вода, один фокус. Не изображаем сервер под нагрузкой."),
+            PokeNotification(id: "opora.poke.shoe", hour: 11, minute: 30, title: "Кроссовок пошёл", body: "Шаги где? Великие стратегии ногами не ходятся. Короткий круг. Сейчас."),
+            PokeNotification(id: "opora.poke.spoon", hour: 12, minute: 30, title: "Ложка прибыла", body: "Кофе и злость — не рацион. Еда. Белок. Вода. Потом спасать мир."),
+            PokeNotification(id: "opora.poke.midday", hour: 13, minute: 30, title: "Контрольный тык", body: "Квадратная голова детектед. Большие решения запрещены. Механика, вода, пауза."),
+            PokeNotification(id: "opora.poke.evening", hour: 18, minute: 30, title: "Домой, объект", body: "Статус жене. Не исчезать. Семья не должна угадывать, какой там пожар в проде."),
+            PokeNotification(id: "opora.poke.night", hour: 22, minute: 00, title: "Отбой, стратег", body: "Империи завтра. Сегодня закрыть день, снять броню с головы и не превращаться в камень.")
+        ]
     }
 
     private func schedule(_ notification: PokeNotification) throws {
