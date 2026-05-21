@@ -25,6 +25,10 @@ final class AppState: ObservableObject {
         didSet { UserDefaults.standard.set(pokeNotificationsEnabled, forKey: "pokeNotificationsEnabled") }
     }
 
+    @Published var ruthlessPokeMode: Bool = false {
+        didSet { UserDefaults.standard.set(ruthlessPokeMode, forKey: "ruthlessPokeMode") }
+    }
+
     @Published var selectedNerveStatus: NerveStatus = .yellow
     @Published var todaySnapshot: TodaySnapshot = .mock
     @Published var financeSummary: FinanceSummary = .mock
@@ -38,6 +42,7 @@ final class AppState: ObservableObject {
         self.apiToken = UserDefaults.standard.string(forKey: "apiToken") ?? ""
         self.isMockMode = UserDefaults.standard.object(forKey: "isMockMode") as? Bool ?? true
         self.pokeNotificationsEnabled = UserDefaults.standard.object(forKey: "pokeNotificationsEnabled") as? Bool ?? false
+        self.ruthlessPokeMode = UserDefaults.standard.object(forKey: "ruthlessPokeMode") as? Bool ?? false
     }
 
     var apiClient: OporaApiClient {
@@ -55,9 +60,10 @@ final class AppState: ObservableObject {
 
     func enablePokeNotifications() async {
         await runApiAction {
-            try await NotificationService.shared.scheduleDefaultPokeNotifications()
+            let mode: PokeMode = ruthlessPokeMode ? .ruthless : .humane
+            try await NotificationService.shared.scheduleDefaultPokeNotifications(mode: mode)
             pokeNotificationsEnabled = true
-            lastMessage = "Проверка палкой по крону включена."
+            lastMessage = ruthlessPokeMode ? "Режим без гуманности включен. Кроссовок заряжен." : "Проверка палкой по крону включена."
         }
     }
 
@@ -65,6 +71,13 @@ final class AppState: ObservableObject {
         NotificationService.shared.cancelPokeNotifications()
         pokeNotificationsEnabled = false
         lastMessage = "Проверка палкой по крону выключена."
+    }
+
+    func setRuthlessPokeMode(_ enabled: Bool) async {
+        ruthlessPokeMode = enabled
+        if pokeNotificationsEnabled {
+            await enablePokeNotifications()
+        }
     }
 
     func createTelegramLinkCode() async {
