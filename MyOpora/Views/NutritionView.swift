@@ -6,7 +6,8 @@ struct NutritionView: View {
     @State private var selectedIdea: MealIdea? = nil
     @State private var ateNormally = false
     @State private var waterDone = false
-    @State private var supplementsDone = Set<SupplementSlot>()
+    @State private var supplementsDone = Set<Int>()
+    @State private var supplementPlans = SupplementPlan.defaultPlans
 
     var body: some View {
         NavigationStack {
@@ -16,7 +17,8 @@ struct NutritionView: View {
                     mealSelectorCard
                     mealIdeaCard
                     todayBasicsCard
-                    supplementsCard
+                    supplementPlanCard
+                    supplementSafetyCard
                     rulesCard
                 }
                 .padding(16)
@@ -91,20 +93,64 @@ struct NutritionView: View {
         }
     }
 
-    private var supplementsCard: some View {
+    private var supplementPlanCard: some View {
         OporaCard("Витамины / добавки", systemImage: "pills.fill") {
-            Text("Опора не назначает витамины. Она помогает не забывать то, что уже согласовано или осознанно добавлено в режим.")
+            Text("Это не назначения. Это карточки режима: что, когда, сколько, почему и до какой даты. Реальные дозировки потом заполним по анализам/врачу.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            ForEach(SupplementSlot.allCases) { slot in
-                Toggle("\(slot.emoji) \(slot.title)", isOn: Binding(
-                    get: { supplementsDone.contains(slot) },
+            VStack(spacing: 12) {
+                ForEach(supplementPlans) { plan in
+                    supplementRow(plan)
+                    if plan.id != supplementPlans.last?.id {
+                        Divider()
+                    }
+                }
+            }
+        }
+    }
+
+    private func supplementRow(_ plan: SupplementPlan) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                Text(plan.slot.emoji)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(plan.name)
+                        .font(.headline)
+                    Text("\(plan.dosage) • \(plan.slot.title) • \(plan.withFood ? "с едой" : "по инструкции")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Toggle("", isOn: Binding(
+                    get: { supplementsDone.contains(plan.id) },
                     set: { isOn in
-                        if isOn { supplementsDone.insert(slot) } else { supplementsDone.remove(slot) }
+                        if isOn { supplementsDone.insert(plan.id) } else { supplementsDone.remove(plan.id) }
                     }
                 ))
+                .labelsHidden()
             }
+
+            Text(plan.reason)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text("Курс: \(plan.course)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    private var supplementSafetyCard: some View {
+        OporaCard("Безопасность добавок", systemImage: "cross.case.fill") {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("• Новые добавки — только осознанно, лучше после анализов.")
+                Text("• Высокие дозировки — не без врача.")
+                Text("• Если появилась странная реакция — пауза и записать симптом.")
+                Text("• Не лечим тревогу покупкой баночек.")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
         }
     }
 
@@ -235,11 +281,34 @@ enum SupplementSlot: String, CaseIterable, Identifiable, Hashable {
 
     var title: String {
         switch self {
-        case .morning: return "Утренние добавки"
-        case .lunch: return "Дневные добавки"
-        case .evening: return "Вечерние добавки"
+        case .morning: return "Утро"
+        case .lunch: return "День"
+        case .evening: return "Вечер"
         }
     }
+}
+
+struct SupplementPlan: Identifiable {
+    let id: Int
+    let name: String
+    let dosage: String
+    let slot: SupplementSlot
+    let withFood: Bool
+    let course: String
+    let reason: String
+    let status: SupplementStatus
+
+    static let defaultPlans: [SupplementPlan] = [
+        .init(id: 1, name: "Добавка 1", dosage: "дозировку заполнить", slot: .morning, withFood: true, course: "до даты / по назначению", reason: "причина: анализы / врач / цель", status: .active),
+        .init(id: 2, name: "Добавка 2", dosage: "дозировку заполнить", slot: .lunch, withFood: true, course: "до даты / по назначению", reason: "причина: анализы / врач / цель", status: .active),
+        .init(id: 3, name: "Добавка 3", dosage: "дозировку заполнить", slot: .evening, withFood: false, course: "до даты / по назначению", reason: "причина: анализы / врач / цель", status: .paused)
+    ]
+}
+
+enum SupplementStatus: String {
+    case active
+    case paused
+    case completed
 }
 
 #Preview {
