@@ -6,6 +6,7 @@ import UIKit
 struct StyleView: View {
     @State private var selectedScenario: StyleScenario = .office
     @State private var selectedMood: StyleMood = .calm
+    @State private var selectedEdc: EdcMode = .minimal
     @State private var copied = false
 
     var body: some View {
@@ -15,6 +16,7 @@ struct StyleView: View {
                     headerCard
                     selectorCard
                     outfitCard
+                    edcCard
                     groomingCard
                     checklistCard
                     photoRulesCard
@@ -65,11 +67,37 @@ struct StyleView: View {
             .font(.subheadline)
 
             Button(copied ? "Скопировано" : "Скопировать образ") {
-                copy(selectedScenario.recommendations(for: selectedMood).joined(separator: "\n"))
+                let outfit = selectedScenario.recommendations(for: selectedMood).joined(separator: "\n")
+                let edc = selectedEdc.rules.joined(separator: "\n")
+                copy(outfit + "\n\nEDC:\n" + edc)
                 copied = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
             }
             .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private var edcCard: some View {
+        OporaCard("Tech / Tactical EDC", systemImage: "backpack.fill") {
+            Picker("EDC-режим", selection: $selectedEdc) {
+                ForEach(EdcMode.allCases) { mode in
+                    Text("\(mode.emoji) \(mode.title)").tag(mode)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(selectedEdc.rules, id: \.self) { item in
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                        Text(item)
+                    }
+                }
+            }
+            .font(.subheadline)
+
+            Text("Генерал Черешня, Skyfall/Vampire, Вирій — это не случайные брелки, а смысловые маркеры. Главное — не превращать рюкзак в выставку сувениров.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -95,6 +123,7 @@ struct StyleView: View {
                 Text("☐ штаны сидят по талии, не спасаются ремнём")
                 Text("☐ обувь чистая")
                 Text("☐ карманы не раздуты")
+                Text("☐ EDC не выглядит как новогодняя ёлка")
                 Text("☐ телефон / кошелёк / ключи / салфетки")
                 Text("☐ лицо спокойное, не “меня добил документооборот”")
             }
@@ -168,6 +197,46 @@ enum StyleScenario: String, CaseIterable, Identifiable {
             return ["Тёмная плотная база без натяжения на животе.", "Сверху overshirt/рубашка/лёгкий жакет для структуры.", "Чистая обувь, часы, минимальный EDC.", "Цель: дорогой виски, не случайный посетитель фудкорта.", mood.extra]
         case .fishing:
             return ["Практичная одежда по погоде.", "Слой от ветра/дождя.", "Обувь, которую не жалко, но не убитую.", "Кепка/очки/салфетки/вода.", "Фото с карпом — только как доказательство, что рыбалка была не “чисто посидеть”. Не архивно.", "Рыбалка — техобслуживание нервной системы, а не показ мод."]
+        }
+    }
+}
+
+enum EdcMode: String, CaseIterable, Identifiable {
+    case minimal
+    case techTactical
+    case office
+    case travel
+
+    var id: String { rawValue }
+
+    var emoji: String {
+        switch self {
+        case .minimal: return "⚫️"
+        case .techTactical: return "🛠"
+        case .office: return "💼"
+        case .travel: return "🎒"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .minimal: return "Минимум"
+        case .techTactical: return "Tech/Tactical"
+        case .office: return "Офис"
+        case .travel: return "Дорога"
+        }
+    }
+
+    var rules: [String] {
+        switch self {
+        case .minimal:
+            return ["Один-два смысловых аксессуара максимум.", "Всё лишнее убрать: образ должен дышать.", "Если предмет не нужен и не имеет истории — не вешаем."]
+        case .techTactical:
+            return ["Один-два смысловых маркера: Вирій, Skyfall/Vampire, Генерал Черешня — ок.", "Смысл есть, клоунады нет.", "Если вещь вызывает вопрос — это conversation starter, но не рекламный стенд.", "EDC должен быть функциональным или иметь историю.", "Не превращать рюкзак в новогоднюю ёлку."]
+        case .office:
+            return ["Для облэнерго tech/tactical детали допустимы, если общий вид собранный.", "На официальные совещания — меньше навеса, больше структуры.", "Документы, ноут, зарядка, вода, салфетки — важнее декоративности."]
+        case .travel:
+            return ["Powerbank, кабель, вода, салфетки, таблетки от головы — база.", "Карабин/брелок ок, если не мешает доставать вещи.", "В дороге EDC должен помогать, а не звенеть и цепляться за всё подряд."]
         }
     }
 }
