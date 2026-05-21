@@ -18,7 +18,14 @@ targets:
       properties:
         CFBundleDisplayName: Опора
         UILaunchScreen: {}
+        NSHealthShareUsageDescription: Опора читает количество шагов из приложения Здоровье, чтобы показывать ежедневный прогресс движения.
+        NSHealthUpdateUsageDescription: Опора не записывает данные в Здоровье.
+    entitlements:
+      path: MyOpora/MyOpora.entitlements
+      properties:
+        com.apple.developer.healthkit: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.irozinko.myopora
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: MyOpora/MyOpora.entitlements
