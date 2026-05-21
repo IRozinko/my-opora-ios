@@ -16,7 +16,7 @@ struct GoalsView: View {
                                 Spacer()
                             }
                             ProgressView(value: goal.progress)
-                            Text("\(format(goal.current)) / \(format(goal.target)) UAH")
+                            Text("\(format(goal.currentAmount)) / \(format(goal.targetAmount)) UAH")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
