@@ -58,7 +58,16 @@ struct SettingsView: View {
                         }
                     ))
 
-                    Text("Уведомления: 09:30, 13:30, 18:30, 22:00. Это не давление, а мягкий health-check: вода, пауза, семья, закрыть день.")
+                    Toggle("Без гуманности", isOn: Binding(
+                        get: { appState.ruthlessPokeMode },
+                        set: { newValue in
+                            Task { await appState.setRuthlessPokeMode(newValue) }
+                        }
+                    ))
+
+                    Text(appState.ruthlessPokeMode
+                         ? "Режим: кроссовок заряжен. Уведомления будут жёстче, но без самоуничтожения."
+                         : "Режим: мягкий health-check. Вода, пауза, семья, закрыть день.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
