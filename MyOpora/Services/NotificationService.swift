@@ -25,6 +25,8 @@ final class NotificationService: ObservableObject {
 
         let notifications = [
             PokeNotification(id: "opora.poke.morning", hour: 9, minute: 30, title: "Опора", body: "*тык палкой* Живой? Вода, один фокус, без героизма."),
+            PokeNotification(id: "opora.poke.shoe", hour: 11, minute: 30, title: "Тык кроссовком", body: "Ты сегодня двигался или только думал о великих стратегиях? Короткий круг — уже зачёт."),
+            PokeNotification(id: "opora.poke.spoon", hour: 12, minute: 30, title: "Тык ложкой", body: "Ты ел нормальную еду или опять работаешь на кофе и злости? Сначала еда, потом стратегия."),
             PokeNotification(id: "opora.poke.midday", hour: 13, minute: 30, title: "Проверка палкой", body: "Квадратная голова? Пауза, вода, механические задачи."),
             PokeNotification(id: "opora.poke.evening", hour: 18, minute: 30, title: "Домой без исчезновения", body: "Назови состояние. Семья — не плата за успех."),
             PokeNotification(id: "opora.poke.night", hour: 22, minute: 00, title: "Вечерняя Опора", body: "Не решаем всю жизнь. Закрываем день и не превращаемся в камень.")
@@ -38,6 +40,8 @@ final class NotificationService: ObservableObject {
     func cancelPokeNotifications() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [
             "opora.poke.morning",
+            "opora.poke.shoe",
+            "opora.poke.spoon",
             "opora.poke.midday",
             "opora.poke.evening",
             "opora.poke.night"
