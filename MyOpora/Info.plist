@@ -18,5 +18,9 @@
   <string>1.0</string>
   <key>CFBundleVersion</key>
   <string>1</string>
+  <key>NSHealthShareUsageDescription</key>
+  <string>Опора читает количество шагов из приложения Здоровье, чтобы показывать ежедневный прогресс движения.</string>
+  <key>NSHealthUpdateUsageDescription</key>
+  <string>Опора не записывает данные в Здоровье.</string>
 </dict>
 </plist>
