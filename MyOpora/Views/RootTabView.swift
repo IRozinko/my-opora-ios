@@ -6,6 +6,9 @@ struct RootTabView: View {
             TodayView()
                 .tabItem { Label("Сегодня", systemImage: "sun.max.fill") }
 
+            NutritionView()
+                .tabItem { Label("Питание", systemImage: "fork.knife.circle.fill") }
+
             FinanceView()
                 .tabItem { Label("Финансы", systemImage: "creditcard.fill") }
 
